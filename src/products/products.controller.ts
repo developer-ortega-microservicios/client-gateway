@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Inject, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common';
 import { PRODUCT_SERVICE } from '../config/service.js';
 import { ClientProxy } from '@nestjs/microservices';
+import { PaginationDto } from '../common/dto/pagination.dto.js';
 
 @Controller('products')
 export class ProductsController {
@@ -14,8 +15,8 @@ export class ProductsController {
   }
 
   @Get()
-  findAllProducts(){
-    return this.productsClient.send({ cmd: 'find_all' }, {});
+  findAllProducts(@Query() paginationDto: PaginationDto){
+    return this.productsClient.send({ cmd: 'find_all' }, paginationDto);
   }
 
   @Get(':id')
