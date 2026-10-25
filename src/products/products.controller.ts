@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common';
 import { PRODUCT_SERVICE } from '../config/service.js';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { PaginationDto } from '../common/dto/pagination.dto.js';
 import { firstValueFrom } from 'rxjs';
 
@@ -27,8 +27,8 @@ export class ProductsController {
         this.productsClient.send({ cmd: 'find_one_product' }, {id})
       )
       return product;
-    } catch (error) {
-      throw new BadRequestException(error);
+    } catch (error: any) {
+      throw new RpcException(error);
     }
     
   }
