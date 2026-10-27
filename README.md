@@ -61,3 +61,8 @@ npm run start:prod  # Ejecuta el build
 npm run lint        # Oxlint
 npm run test        # Pruebas unitarias
 ```
+
+## Nats
+```
+docker run -d --name nats --network nats -p 4222:4222 -p 8222:8222 nats
+```
