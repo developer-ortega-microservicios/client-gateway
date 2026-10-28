@@ -12,7 +12,7 @@ export class AuthController {
   ) { }
 
   @Post('register')
-  registerUser(@Body() registerUserDto: RegisterUserDto){
+  registerUser(@Body() registerUserDto: RegisterUserDto) {
     return this.client.send('auth.register.user', registerUserDto).pipe(
       catchError(error => {
         throw new RpcException(error)
@@ -21,12 +21,16 @@ export class AuthController {
   }
 
   @Post('login')
-  loginUser(@Body() loginUserDto: LoginUserDto){
-    return this.client.send('auth.login.user', loginUserDto)
+  loginUser(@Body() loginUserDto: LoginUserDto) {
+    return this.client.send('auth.login.user', loginUserDto).pipe(
+      catchError(error => {
+        throw new RpcException(error)
+      })
+    )
   }
 
   @Get('verify')
-  verifdyToken(){
+  verifdyToken() {
     return this.client.send('auth.verify.user', {})
   }
 }
