@@ -10,16 +10,16 @@ export class AuthController {
 
   @Post('register')
   registerUser(){
-    this.client.send('auth.register.user', {})
+    return this.client.send('auth.register.user', {})
   }
 
   @Post('login')
   loginUser(){
-    this.client.send('auth.login.user', {})
+    return this.client.send('auth.login.user', {})
   }
 
   @Get('verify')
   verifdyToken(){
-    this.client.send('auth.verify.user', {})
+    return this.client.send('auth.verify.user', {})
   }
 }
