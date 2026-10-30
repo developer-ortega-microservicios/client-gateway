@@ -2,21 +2,24 @@
 
 API Gateway hecho con **NestJS** y **TypeScript**, parte del proyecto del curso [NestJS + Microservicios](https://www.udemy.com/course/nestjs-microservicios/) (Udemy, DevTalles). Es el único punto de entrada HTTP: recibe las peticiones de los clientes y las reenvía a los microservicios a través de **NATS**.
 
-> Proyecto de práctica, **en progreso**. Se actualiza a medida que avanza el curso.
+> Proyecto de práctica completado: este servicio forma parte de una tienda de 5 microservicios desplegada en **Google Kubernetes Engine (GKE)** con Helm. Ver el [launcher](https://github.com/developer-ortega-microservicios/products-launcher).
 
 ## Arquitectura
 
 ```
 Cliente HTTP  →  client-gateway  ──NATS──→  products-ms
-                                 ──NATS──→  orders-ms
-                                 ──NATS──→  payments-ms (próximamente)
+                                 ──NATS──→  orders-ms ──NATS──→ payments-ms ──→ Stripe
+                                 ──NATS──→  auth-ms
 ```
 
 Repositorios relacionados en la organización [developer-ortega-microservicios](https://github.com/developer-ortega-microservicios).
 
 ## Funcionalidades
 
-- Rutas REST para productos y órdenes que delegan en los microservicios
+- Rutas REST para productos, órdenes y autenticación que delegan en los microservicios
+- Autenticación con **JWT**: `auth-ms` emite y verifica los tokens
+- Al crear una orden devuelve también la sesión de pago de **Stripe** (`paymentSession`)
+- Endpoint de health check en `/` (lo usa el balanceador de GKE)
 - Comunicación con los microservicios por mensajes sobre **NATS**
 - Validación de DTOs y de parámetros (`ParseUUIDPipe`, `ParseIntPipe`)
 - Paginación y filtro de órdenes por estado
@@ -35,11 +38,19 @@ Repositorios relacionados en la organización [developer-ortega-microservicios](
 | PATCH | `/products/:id` | Actualizar un producto |
 | DELETE | `/products/:id` | Eliminar un producto |
 
+### Autenticación — `/auth`
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/auth/register` | Registrar un usuario |
+| POST | `/auth/login` | Iniciar sesión (devuelve el token JWT) |
+| GET | `/auth/verify` | Verificar el token JWT (devuelve el usuario y el token) |
+
 ### Órdenes — `/orders`
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| POST | `/orders` | Crear una orden con sus ítems |
+| POST | `/orders` | Crear una orden con sus ítems; devuelve la orden y su sesión de pago de Stripe |
 | GET | `/orders` | Listar órdenes (paginado, filtro por estado) |
 | GET | `/orders/id/:id` | Obtener una orden por UUID |
 | GET | `/orders/:status` | Listar órdenes por estado |
@@ -80,7 +91,14 @@ Repositorios relacionados en la organización [developer-ortega-microservicios](
    npm run start:dev
    ```
 
-Para que las rutas respondan, `products-ms` y `orders-ms` deben estar corriendo y conectados al mismo servidor NATS.
+Para que las rutas respondan, los microservicios (`products-ms`, `orders-ms`, `payments-ms` y `auth-ms`) deben estar corriendo y conectados al mismo servidor NATS. La forma más simple es levantar todo con el [launcher](https://github.com/developer-ortega-microservicios/products-launcher).
+
+## Despliegue
+
+- **Imagen de producción:** `dockerfile.prod` (build multi-etapa sobre `node:22-alpine`).
+- **Build y publicación:** `cloudbuild.yml` construye la imagen con Cloud Build y la sube a **Artifact Registry** (`image-registry/client-gateway`).
+- **Kubernetes:** se despliega en GKE Autopilot con el chart de Helm `k8s/tienda-gke` del [launcher](https://github.com/developer-ortega-microservicios/products-launcher); se comunica con el resto de servicios por NATS dentro del clúster.
+- **Exposición pública:** el Ingress de GKE enruta `/*` hacia este servicio y `/payments/*` hacia `payments-ms`.
 
 ## Variables de entorno
 
